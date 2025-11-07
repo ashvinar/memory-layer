@@ -9,7 +9,7 @@ use rusqlite::types::Type;
 use rusqlite::{params, Connection, OptionalExtension, Row};
 use serde::Serialize;
 use serde_json;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use tracing::{debug, info};
 
@@ -716,7 +716,7 @@ impl Database {
         }
 
         let mut proposed_links =
-            self.suggest_links(&context, &memory.id, MAX_AGENTIC_LINKS.saturating_sub(1))?;
+            self.suggest_links(&context, &keywords, &memory.id, MAX_AGENTIC_LINKS.saturating_sub(1))?;
         existing_links = self.merge_links(existing_links, &mut proposed_links);
 
         // Record evolution event
@@ -931,6 +931,7 @@ impl Database {
     fn suggest_links(
         &self,
         context: &str,
+        current_keywords: &[String],
         current_memory: &MemoryId,
         limit: usize,
     ) -> Result<Vec<AgenticLink>> {
@@ -938,29 +939,88 @@ impl Database {
             return Ok(vec![]);
         }
 
+        // Get all candidate memories with their keywords
         let mut stmt = self.conn.prepare(
-            "SELECT memory_id
+            "SELECT memory_id, keywords, context
              FROM agentic_memories
-             WHERE context = ?1 AND memory_id != ?2
-             ORDER BY last_accessed DESC
-             LIMIT ?3",
+             WHERE memory_id != ?1
+             ORDER BY last_accessed DESC",
         )?;
 
-        let candidates = stmt
-            .query_map(
-                params![context, current_memory.0.as_str(), limit as i64],
-                |row| row.get::<_, String>(0),
-            )?
+        let candidates: Vec<(MemoryId, Vec<String>, String)> = stmt
+            .query_map(params![current_memory.0.as_str()], |row| {
+                let memory_id = MemoryId(row.get::<_, String>(0)?);
+                let keywords_json: String = row.get(1)?;
+                let keywords = serde_json::from_str::<Vec<String>>(&keywords_json).unwrap_or_default();
+                let context: String = row.get(2)?;
+                Ok((memory_id, keywords, context))
+            })?
             .collect::<Result<Vec<_>, _>>()?;
 
-        Ok(candidates
+        // Calculate keyword similarity and filter by threshold
+        let mut links: Vec<AgenticLink> = candidates
             .into_iter()
-            .map(|id| AgenticLink {
-                target: MemoryId(id),
-                strength: 0.6,
-                rationale: Some("topic-match".to_string()),
+            .filter_map(|(memory_id, keywords, mem_context)| {
+                // Link memories with same context (legacy behavior)
+                let same_context = mem_context == context;
+
+                if keywords.is_empty() {
+                    // If no keywords but same context, create a basic link
+                    if same_context {
+                        return Some(AgenticLink {
+                            target: memory_id,
+                            strength: 0.6,
+                            rationale: Some("same-context".to_string()),
+                        });
+                    }
+                    return None;
+                }
+
+                // Calculate Jaccard similarity: |A ∩ B| / |A ∪ B|
+                let current_set: HashSet<_> = current_keywords.iter().collect();
+                let candidate_set: HashSet<_> = keywords.iter().collect();
+
+                let intersection_count = current_set.intersection(&candidate_set).count();
+                let union_count = current_set.union(&candidate_set).count();
+
+                let similarity = if union_count > 0 {
+                    intersection_count as f32 / union_count as f32
+                } else {
+                    0.0
+                };
+
+                // Link if similarity > 65% OR same context
+                if similarity > 0.65 || same_context {
+                    let (strength, rationale) = if similarity > 0.65 {
+                        if same_context {
+                            (similarity, format!("keyword-similarity: {:.1}% (same context)", similarity * 100.0))
+                        } else {
+                            (similarity, format!("keyword-similarity: {:.1}%", similarity * 100.0))
+                        }
+                    } else {
+                        (0.6, "same-context".to_string())
+                    };
+
+                    Some(AgenticLink {
+                        target: memory_id,
+                        strength,
+                        rationale: Some(rationale),
+                    })
+                } else {
+                    None
+                }
             })
-            .collect())
+            .collect();
+
+        // Sort by strength (descending) and limit results
+        links.sort_by(|a, b| {
+            b.strength
+                .partial_cmp(&a.strength)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+        links.truncate(limit);
+
+        Ok(links)
     }
 
     fn merge_links(

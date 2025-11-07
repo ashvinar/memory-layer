@@ -154,6 +154,139 @@ impl AgenticMemoryBase {
         Ok(())
     }
 
+    /// Link similar memories based on keyword similarity (>65%)
+    /// This can be used to retroactively link existing memories
+    pub fn link_similar_memories(&self, memory_id: Option<&MemoryId>) -> Result<usize> {
+        use std::collections::HashSet;
+
+        let mut total_links_created = 0;
+
+        // Get all memories or just the specified one
+        let memories_to_process: Vec<(MemoryId, Vec<String>)> = if let Some(id) = memory_id {
+            let keywords: Vec<String> = self
+                .conn
+                .query_row(
+                    "SELECT keywords FROM agentic_memories WHERE memory_id = ?1",
+                    params![id.0.as_str()],
+                    |row| {
+                        let keywords_json: String = row.get(0)?;
+                        Ok(serde_json::from_str(&keywords_json).unwrap_or_default())
+                    },
+                )?;
+            vec![(id.clone(), keywords)]
+        } else {
+            let mut stmt = self.conn.prepare(
+                "SELECT memory_id, keywords FROM agentic_memories",
+            )?;
+            let rows = stmt.query_map([], |row| {
+                let id = MemoryId(row.get::<_, String>(0)?);
+                let keywords_json: String = row.get(1)?;
+                let keywords = serde_json::from_str(&keywords_json).unwrap_or_default();
+                Ok((id, keywords))
+            })?;
+            let result: Vec<_> = rows.collect::<Result<Vec<_>, _>>()?;
+            result
+        };
+
+        // Get all memories with keywords for comparison
+        let all_memories: Vec<(MemoryId, Vec<String>)> = {
+            let mut stmt = self.conn.prepare(
+                "SELECT memory_id, keywords FROM agentic_memories",
+            )?;
+            let rows = stmt.query_map([], |row| {
+                let id = MemoryId(row.get::<_, String>(0)?);
+                let keywords_json: String = row.get(1)?;
+                let keywords = serde_json::from_str(&keywords_json).unwrap_or_default();
+                Ok((id, keywords))
+            })?;
+            rows.collect::<Result<Vec<_>, _>>()?
+        };
+
+        // For each memory to process, find similar memories
+        for (source_id, source_keywords) in &memories_to_process {
+            if source_keywords.is_empty() {
+                continue;
+            }
+
+            let source_set: HashSet<_> = source_keywords.iter().collect();
+
+            // Get existing links for this memory
+            let existing_links: Vec<AgenticLink> = self
+                .conn
+                .query_row(
+                    "SELECT links FROM agentic_memories WHERE memory_id = ?1",
+                    params![source_id.0.as_str()],
+                    |row| {
+                        let links_json: String = row.get(0)?;
+                        Ok(serde_json::from_str(&links_json).unwrap_or_default())
+                    },
+                )?;
+
+            let existing_targets: HashSet<_> = existing_links.iter()
+                .map(|link| &link.target)
+                .collect();
+
+            let mut new_links: Vec<AgenticLink> = Vec::new();
+
+            // Compare with all other memories
+            for (target_id, target_keywords) in &all_memories {
+                if target_id == source_id || target_keywords.is_empty() {
+                    continue;
+                }
+
+                // Skip if already linked
+                if existing_targets.contains(target_id) {
+                    continue;
+                }
+
+                // Calculate Jaccard similarity
+                let target_set: HashSet<_> = target_keywords.iter().collect();
+                let intersection = source_set.intersection(&target_set).count();
+                let union = source_set.union(&target_set).count();
+
+                let similarity = if union > 0 {
+                    intersection as f32 / union as f32
+                } else {
+                    0.0
+                };
+
+                // Only link if similarity > 65%
+                if similarity > 0.65 {
+                    new_links.push(AgenticLink {
+                        target: target_id.clone(),
+                        strength: similarity,
+                        rationale: Some(format!("auto-linked: {:.1}% keyword similarity", similarity * 100.0)),
+                    });
+                }
+            }
+
+            // Add new links to existing ones
+            if !new_links.is_empty() {
+                let mut all_links = existing_links;
+                all_links.extend(new_links.iter().cloned());
+
+                // Sort by strength and limit
+                all_links.sort_by(|a, b| {
+                    b.strength
+                        .partial_cmp(&a.strength)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                });
+                all_links.truncate(20); // Max links per memory
+
+                // Update database
+                let links_json = serde_json::to_string(&all_links)?;
+                self.conn.execute(
+                    "UPDATE agentic_memories SET links = ?1 WHERE memory_id = ?2",
+                    params![links_json, source_id.0.as_str()],
+                )?;
+
+                total_links_created += new_links.len();
+            }
+        }
+
+        Ok(total_links_created)
+    }
+
     pub fn graph(&self, limit: usize) -> Result<AgenticGraph> {
         let mut stmt = self.conn.prepare(
             "SELECT memory_id, content, context, keywords, tags, category,
