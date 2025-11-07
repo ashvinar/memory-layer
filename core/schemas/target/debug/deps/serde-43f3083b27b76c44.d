@@ -1,0 +1,14 @@
+/Users/ashvinarora/memory-layer/core/schemas/target/debug/deps/serde-43f3083b27b76c44.d: /Users/ashvinarora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/ashvinarora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/ashvinarora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/ashvinarora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/ashvinarora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/ashvinarora/memory-layer/core/schemas/target/debug/build/serde-c348e5590472a789/out/private.rs
+
+/Users/ashvinarora/memory-layer/core/schemas/target/debug/deps/libserde-43f3083b27b76c44.rlib: /Users/ashvinarora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/ashvinarora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/ashvinarora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/ashvinarora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/ashvinarora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/ashvinarora/memory-layer/core/schemas/target/debug/build/serde-c348e5590472a789/out/private.rs
+
+/Users/ashvinarora/memory-layer/core/schemas/target/debug/deps/libserde-43f3083b27b76c44.rmeta: /Users/ashvinarora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/ashvinarora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/ashvinarora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/ashvinarora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/ashvinarora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/ashvinarora/memory-layer/core/schemas/target/debug/build/serde-c348e5590472a789/out/private.rs
+
+/Users/ashvinarora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs:
+/Users/ashvinarora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs:
+/Users/ashvinarora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs:
+/Users/ashvinarora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:
+/Users/ashvinarora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs:
+/Users/ashvinarora/memory-layer/core/schemas/target/debug/build/serde-c348e5590472a789/out/private.rs:
+
+# env-dep:OUT_DIR=/Users/ashvinarora/memory-layer/core/schemas/target/debug/build/serde-c348e5590472a789/out

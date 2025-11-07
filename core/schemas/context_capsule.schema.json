@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://memory-layer.local/schemas/context_capsule.schema.json",
+  "title": "ContextCapsule",
+  "description": "Compact context package for injection into AI assistants",
+  "type": "object",
+  "required": ["capsule_id", "preamble_text", "messages", "provenance", "ttl_sec"],
+  "properties": {
+    "capsule_id": {
+      "type": "string",
+      "pattern": "^cap_[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "ULID prefixed with 'cap_'"
+    },
+    "preamble_text": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Exact visible preamble text for Prefill lane"
+    },
+    "messages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["role", "content"],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["system", "user", "assistant"]
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "minItems": 1,
+      "description": "Messages for Pull/Merge lanes (typically one system message)"
+    },
+    "provenance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "ref"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["assistant", "file", "page", "terminal", "memory"]
+          },
+          "ref": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Reference ID or path"
+          },
+          "when": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Optional timestamp"
+          }
+        }
+      },
+      "description": "Source attribution for context"
+    },
+    "delta_of": {
+      "type": "string",
+      "pattern": "^cap_[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Previous capsule ID if this is a delta update"
+    },
+    "ttl_sec": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 86400,
+      "description": "Time-to-live in seconds (max 24 hours)"
+    },
+    "token_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Estimated token count for the context"
+    },
+    "style": {
+      "type": "string",
+      "enum": ["short", "standard", "detailed"],
+      "description": "Context style used"
+    }
+  }
+}

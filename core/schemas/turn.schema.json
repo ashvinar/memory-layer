@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://memory-layer.local/schemas/turn.schema.json",
+  "title": "Turn",
+  "description": "Append-only conversation event capturing user input and AI response",
+  "type": "object",
+  "required": ["id", "thread_id", "ts_user", "user_text", "source"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^turn_[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "ULID prefixed with 'turn_'"
+    },
+    "thread_id": {
+      "type": "string",
+      "pattern": "^thr_[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Thread identifier prefixed with 'thr_'"
+    },
+    "ts_user": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC3339 timestamp when user sent message"
+    },
+    "user_text": {
+      "type": "string",
+      "minLength": 1,
+      "description": "User's message text"
+    },
+    "ts_ai": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC3339 timestamp when AI responded (optional)"
+    },
+    "ai_text": {
+      "type": "string",
+      "description": "AI's response text (optional)"
+    },
+    "source": {
+      "type": "object",
+      "required": ["app"],
+      "properties": {
+        "app": {
+          "type": "string",
+          "enum": ["Claude", "ChatGPT", "VSCode", "Mail", "Notes", "Terminal", "Other"],
+          "description": "Source application"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Optional URL if source is web-based"
+        },
+        "path": {
+          "type": "string",
+          "description": "Optional file path if source is file-based"
+        }
+      }
+    }
+  }
+}

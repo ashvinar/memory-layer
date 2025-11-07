@@ -1,0 +1,32 @@
+[package]
+name = "memory-layer-composer"
+version = "0.1.0"
+edition = "2021"
+authors = ["Ashvin Arora"]
+description = "Composer service for Personal Memory Layer - builds Context Capsules"
+
+[dependencies]
+memory-layer-schemas = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+ulid = { workspace = true }
+
+# HTTP server
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["trace", "cors"] }
+
+# HTTP client
+reqwest = { version = "0.11", features = ["json"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Time and date
+chrono = "0.4"
+
+# Utilities
+anyhow = "1.0"
+thiserror = "1.0"

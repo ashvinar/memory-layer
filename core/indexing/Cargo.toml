@@ -1,0 +1,40 @@
+[package]
+name = "memory-layer-indexing"
+version = "0.1.0"
+edition = "2021"
+authors = ["Ashvin Arora"]
+description = "Indexing service for Personal Memory Layer - hybrid search with BM25 + embeddings"
+
+[dependencies]
+memory-layer-schemas = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+ulid = { workspace = true }
+
+# Database
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# Search and indexing
+tantivy = "0.22"
+
+# Async and networking
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["trace"] }
+async-trait = "0.1"
+reqwest = { version = "0.12", features = ["json"] }
+
+# Python integration for embeddings
+pyo3 = { version = "0.21", features = ["auto-initialize"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Time and date
+chrono = "0.4"
+
+# Utilities
+anyhow = "1.0"
+thiserror = "1.0"

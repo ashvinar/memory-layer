@@ -1,0 +1,85 @@
+{
+  "app_name": "Memory Layer",
+  "tagline": "Reads text. Never screenshots.",
+
+  "menu": {
+    "preferences": "Preferences…",
+    "search": "Search Memories…",
+    "pause_1h": "Pause for 1 Hour",
+    "resume": "Resume",
+    "quit": "Quit Memory Layer"
+  },
+
+  "preferences": {
+    "title": "Memory Layer Preferences",
+    "apps_section": "Help in apps",
+    "claude": "Claude / Claude Code",
+    "chatgpt": "ChatGPT",
+    "vscode": "Visual Studio Code",
+    "mail": "Mail",
+    "notes": "Notes",
+
+    "style_section": "Context Style",
+    "short": "Short",
+    "short_desc": "1-2 lines, minimal tokens",
+    "standard": "Standard",
+    "standard_desc": "Topic + gists + snippet, ~220 tokens",
+    "detailed": "Detailed",
+    "detailed_desc": "Full context with examples",
+
+    "privacy_section": "Privacy",
+    "redact": "Redact emails and API keys",
+    "no_screenshots": "Text capture only (no screenshots)",
+    "pause": "Pause for 1 hour",
+
+    "hotkeys_section": "Keyboard Shortcuts",
+    "insert": "Insert Context",
+    "search": "Search Memories",
+    "pause_key": "Pause/Resume"
+  },
+
+  "search": {
+    "placeholder": "Search memories, files, conversations…",
+    "results_memories": "Memories",
+    "results_snippets": "Code Snippets",
+    "results_threads": "Conversations",
+    "results_files": "Files",
+    "results_people": "People",
+    "token_count": "Token",
+    "tokens_count": "Tokens",
+    "add": "Add",
+    "insert": "Insert into Chat",
+    "cancel": "Cancel",
+    "no_results": "No results found"
+  },
+
+  "injection": {
+    "context_applied": "Context applied",
+    "undo": "Undo",
+    "added": "Added",
+    "up_to_date": "Up to date",
+    "add_context": "Add Context"
+  },
+
+  "permissions": {
+    "accessibility_required": "Accessibility Access Required",
+    "accessibility_desc": "Memory Layer needs Accessibility permission to read text from apps. This enables context capture.",
+    "accessibility_never_screenshots": "Text only. Never screenshots.",
+    "open_settings": "Open System Settings",
+    "later": "Later"
+  },
+
+  "errors": {
+    "provider_unavailable": "Memory provider unavailable",
+    "no_context": "No context available",
+    "rate_limited": "Rate limit reached. Try again in a moment.",
+    "unknown": "Something went wrong"
+  },
+
+  "status": {
+    "idle": "Idle",
+    "capturing": "Capturing",
+    "paused": "Paused",
+    "error": "Error"
+  }
+}

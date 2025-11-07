@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      width: 320px;
+      padding: 16px;
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f9fafb;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0 0 8px 0;
+      color: #1f2937;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .subtitle {
+      color: #6b7280;
+      font-size: 12px;
+      margin-bottom: 16px;
+      font-weight: normal;
+    }
+
+    .status {
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+
+    .status.healthy {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .status.unhealthy {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .services {
+      background: white;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    .service-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+      font-size: 12px;
+      color: #4b5563;
+    }
+
+    .service-status {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-left: 8px;
+    }
+
+    .service-status.online {
+      background: #10b981;
+    }
+
+    .service-status.offline {
+      background: #ef4444;
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    button {
+      padding: 8px 12px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background: #2563eb;
+    }
+
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    .secondary-btn {
+      background: white;
+      color: #4b5563;
+      border: 1px solid #d1d5db;
+    }
+
+    .secondary-btn:hover {
+      background: #f3f4f6;
+    }
+
+    .logo {
+      width: 24px;
+      height: 24px;
+      fill: #3b82f6;
+    }
+  </style>
+</head>
+<body>
+  <h1>
+    <svg class="logo" viewBox="0 0 24 24" fill="none">
+      <path d="M12 2L15 5L12 8L9 5L12 2Z" fill="currentColor"/>
+      <path d="M12 16L15 19L12 22L9 19L12 16Z" fill="currentColor"/>
+      <path d="M2 12L5 9L8 12L5 15L2 12Z" fill="currentColor"/>
+      <path d="M16 12L19 9L22 12L19 15L16 12Z" fill="currentColor"/>
+    </svg>
+    Memory Layer
+  </h1>
+  <div class="subtitle">Reads text. Never screenshots.</div>
+
+  <div id="status" class="status unhealthy">
+    Checking service status...
+  </div>
+
+  <div class="services">
+    <div class="service-item">
+      <span>Composer (Port 21955)</span>
+      <span class="service-status" id="composer-status"></span>
+    </div>
+    <div class="service-item">
+      <span>Indexing (Port 21954)</span>
+      <span class="service-status" id="indexing-status"></span>
+    </div>
+    <div class="service-item">
+      <span>Ingestion (Port 21953)</span>
+      <span class="service-status" id="ingestion-status"></span>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button id="test-btn">Test Context Generation</button>
+    <button id="open-settings" class="secondary-btn">Open Settings</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

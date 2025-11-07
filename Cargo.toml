@@ -1,0 +1,29 @@
+[workspace]
+members = [
+    "core/schemas",
+    "core/ingestion",
+    "core/indexing",
+    "core/composer",
+]
+
+resolver = "2"
+
+[workspace.dependencies]
+# Shared dependencies across all workspace members
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+ulid = "1.1"
+
+# Schemas library (shared)
+memory-layer-schemas = { path = "core/schemas" }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+
+[profile.dev]
+opt-level = 0
+debug = true

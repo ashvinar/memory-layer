@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://memory-layer.local/schemas/memory.schema.json",
+  "title": "Memory",
+  "description": "Durable knowledge extracted from conversations",
+  "type": "object",
+  "required": ["id", "kind", "topic", "text", "provenance", "created_at"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^mem_[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "ULID prefixed with 'mem_'"
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["decision", "fact", "snippet", "task"],
+      "description": "Type of memory"
+    },
+    "topic": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "Topic or project this memory relates to"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Main content of the memory"
+    },
+    "snippet": {
+      "type": "object",
+      "description": "Code or text snippet details (for kind=snippet)",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Snippet title or filename"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Actual snippet content"
+        },
+        "loc": {
+          "type": "string",
+          "pattern": "^L\\d+-L\\d+$",
+          "description": "Line range, e.g. 'L18-L44'"
+        },
+        "language": {
+          "type": "string",
+          "description": "Programming language"
+        }
+      },
+      "required": ["title", "text"]
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Named entities (people, projects, files, etc.)"
+    },
+    "provenance": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^turn_[0-9A-HJKMNP-TV-Z]{26}$"
+      },
+      "minItems": 1,
+      "description": "Source turn IDs that generated this memory"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC3339 timestamp when memory was created"
+    },
+    "ttl": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Time-to-live in seconds (null means permanent)"
+    }
+  }
+}
