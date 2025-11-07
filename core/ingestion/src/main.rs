@@ -7,6 +7,8 @@ use axum::{
     Router,
 };
 use memory_layer_ingestion::{
+    ActivityDay, Database, EntityStats, ImportanceStats, IndexNote, LifecycleStats,
+    MemoryExtractor, MemoryOrganizer, ProjectSummary, TopicSummary, TrendingTopic,
     ActivityDay, Database, EntityStats, ImportanceStats, IndexNote, IngestionWorker,
     LifecycleStats, MemoryExtractor, ProjectSummary, TopicSummary, TrendingTopic,
 };
@@ -20,6 +22,8 @@ use tracing_subscriber;
 #[derive(Clone)]
 struct AppState {
     db: Arc<Mutex<Database>>,
+    extractor: Arc<MemoryExtractor>,
+    organizer: Arc<MemoryOrganizer>,
     turn_sender: mpsc::UnboundedSender<Turn>,
 }
 
@@ -45,6 +49,7 @@ async fn main() -> Result<()> {
     info!("Database initialized at: {}", db_path);
 
     let extractor = MemoryExtractor::new();
+    let organizer = MemoryOrganizer::new();
 
     // Create channel for async processing
     let (turn_sender, turn_receiver) = mpsc::unbounded_channel::<Turn>();
@@ -60,6 +65,9 @@ async fn main() -> Result<()> {
     info!("Background ingestion worker spawned");
 
     let state = AppState {
+        db: Arc::new(Mutex::new(db)),
+        extractor: Arc::new(extractor),
+        organizer: Arc::new(organizer),
         db: db_arc,
         turn_sender,
     };
@@ -146,6 +154,37 @@ async fn ingest_turn(
         (StatusCode::INTERNAL_SERVER_ERROR, "Failed to queue turn".to_string())
     })?;
 
+    info!(
+        "Extracted {} memories from turn {}",
+        memories.len(),
+        turn.id
+    );
+
+    // Store turn and memories
+    let db = state.db.lock().await;
+
+    db.insert_turn(&turn).map_err(|e| {
+        error!("Failed to insert turn: {}", e);
+        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+    })?;
+
+    for memory in &memories {
+        // Auto-organize memory into hierarchy
+        let organized_memory = state.organizer.organize(&db, memory, &turn).map_err(|e| {
+            error!("Failed to organize memory: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })?;
+
+        db.insert_memory(&organized_memory).map_err(|e| {
+            error!("Failed to insert memory: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })?;
+
+        db.upsert_agentic_memory(&organized_memory).map_err(|e| {
+            error!("Failed to capture agentic metadata: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })?;
+    }
     info!("Turn {} queued for processing", turn_id);
 
     Ok(Json(serde_json::json!({
