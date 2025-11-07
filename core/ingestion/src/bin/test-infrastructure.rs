@@ -79,6 +79,7 @@ async fn main() -> Result<()> {
         provenance: vec![generate_turn_id()],
         created_at: Utc::now().to_rfc3339(),
         ttl: None,
+        topic_id: None,
     };
 
     let implementation_memory = Memory {
@@ -92,6 +93,7 @@ async fn main() -> Result<()> {
         provenance: vec![generate_turn_id()],
         created_at: Utc::now().to_rfc3339(),
         ttl: None,
+        topic_id: None,
     };
 
     let question_memory = Memory {
@@ -104,6 +106,7 @@ async fn main() -> Result<()> {
         provenance: vec![generate_turn_id()],
         created_at: Utc::now().to_rfc3339(),
         ttl: None,
+        topic_id: None,
     };
 
     db.insert_memory(&decision_memory)?;
@@ -206,6 +209,7 @@ async fn main() -> Result<()> {
         provenance: vec![generate_turn_id()],
         created_at: "2024-01-01T00:00:00Z".to_string(),
         ttl: None,
+        topic_id: None,
     };
 
     db.insert_memory(&old_decision)?;

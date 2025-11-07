@@ -1,6 +1,7 @@
 pub mod database;
 pub mod extractor;
 pub mod migration;
+pub mod organizer;
 
 pub use database::{
     ActivityDay, AtomicityCheck, AtomicityStats, Database, DecisionChain, EntityMention,
@@ -11,3 +12,4 @@ pub use database::{
 };
 pub use extractor::MemoryExtractor;
 pub use migration::{migrate_flat_to_hierarchical, HierarchySuggestion, MigrationStats};
+pub use organizer::MemoryOrganizer;

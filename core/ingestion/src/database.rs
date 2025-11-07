@@ -618,6 +618,7 @@ impl Database {
             provenance,
             created_at: row.get(10)?,
             ttl: row.get::<_, Option<i64>>(11)?.map(|t| t as u64),
+            topic_id: row.get::<_, Option<String>>(12)?.map(memory_layer_schemas::TopicId),
         })
     }
 
@@ -643,8 +644,8 @@ impl Database {
         self.conn.execute(
             "INSERT INTO memories (id, kind, topic, text, snippet_title, snippet_text,
                                   snippet_loc, snippet_language, entities, provenance,
-                                  created_at, ttl)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+                                  created_at, ttl, topic_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
             params![
                 memory.id.0.as_str(),
                 kind_label,
@@ -658,6 +659,7 @@ impl Database {
                 provenance_json,
                 memory.created_at,
                 memory.ttl.map(|t| t as i64),
+                memory.topic_id.as_ref().map(|id| id.0.as_str()),
             ],
         )?;
 
@@ -1718,6 +1720,7 @@ impl Database {
                     provenance: serde_json::from_str(&row.get::<_, String>(9)?).unwrap_or_default(),
                     created_at: row.get(10)?,
                     ttl: row.get(11)?,
+                    topic_id: None,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -1839,6 +1842,7 @@ impl Database {
                     provenance: serde_json::from_str(&row.get::<_, String>(9)?).unwrap_or_default(),
                     created_at: row.get(10)?,
                     ttl: row.get(11)?,
+                    topic_id: None,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -1969,6 +1973,7 @@ impl Database {
                         provenance: serde_json::from_str(&row.get::<_, String>(9)?).unwrap_or_default(),
                         created_at: row.get(10)?,
                         ttl: row.get(11)?,
+                        topic_id: None,
                     },
                     row.get::<_, i64>(12)? as u8,
                 ))
@@ -3836,6 +3841,7 @@ mod tests {
             provenance: vec![generate_turn_id()],
             created_at: Utc::now().to_rfc3339(),
             ttl: None,
+            topic_id: None,
         };
 
         db.insert_memory(&memory).unwrap();
@@ -3860,6 +3866,7 @@ mod tests {
             provenance: vec![generate_turn_id()],
             created_at: Utc::now().to_rfc3339(),
             ttl: None,
+            topic_id: None,
         };
 
         let memory_b = Memory {
@@ -3872,6 +3879,7 @@ mod tests {
             provenance: vec![generate_turn_id()],
             created_at: Utc::now().to_rfc3339(),
             ttl: None,
+            topic_id: None,
         };
 
         let memory_c = Memory {
@@ -3884,6 +3892,7 @@ mod tests {
             provenance: vec![generate_turn_id()],
             created_at: Utc::now().to_rfc3339(),
             ttl: None,
+            topic_id: None,
         };
 
         db.insert_memory(&memory_a).unwrap();
@@ -3916,6 +3925,7 @@ mod tests {
             provenance: vec![turn_id.clone()],
             created_at: Utc::now().to_rfc3339(),
             ttl: None,
+            topic_id: None,
         };
 
         let memory_b = Memory {
@@ -3928,6 +3938,7 @@ mod tests {
             provenance: vec![turn_id],
             created_at: Utc::now().to_rfc3339(),
             ttl: None,
+            topic_id: None,
         };
 
         db.insert_memory(&memory_a).unwrap();

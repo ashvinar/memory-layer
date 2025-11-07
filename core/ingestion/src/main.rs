@@ -8,7 +8,7 @@ use axum::{
 };
 use memory_layer_ingestion::{
     ActivityDay, Database, EntityStats, ImportanceStats, IndexNote, LifecycleStats,
-    MemoryExtractor, ProjectSummary, TopicSummary, TrendingTopic,
+    MemoryExtractor, MemoryOrganizer, ProjectSummary, TopicSummary, TrendingTopic,
 };
 use memory_layer_schemas::{MemoryId, ProjectId, TopicId, Turn, WorkspaceId};
 use serde::Deserialize;
@@ -21,6 +21,7 @@ use tracing_subscriber;
 struct AppState {
     db: Arc<Mutex<Database>>,
     extractor: Arc<MemoryExtractor>,
+    organizer: Arc<MemoryOrganizer>,
 }
 
 #[tokio::main]
@@ -45,10 +46,12 @@ async fn main() -> Result<()> {
     info!("Database initialized at: {}", db_path);
 
     let extractor = MemoryExtractor::new();
+    let organizer = MemoryOrganizer::new();
 
     let state = AppState {
         db: Arc::new(Mutex::new(db)),
         extractor: Arc::new(extractor),
+        organizer: Arc::new(organizer),
     };
 
     // Build router
@@ -147,12 +150,18 @@ async fn ingest_turn(
     })?;
 
     for memory in &memories {
-        db.insert_memory(memory).map_err(|e| {
+        // Auto-organize memory into hierarchy
+        let organized_memory = state.organizer.organize(&db, memory, &turn).map_err(|e| {
+            error!("Failed to organize memory: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })?;
+
+        db.insert_memory(&organized_memory).map_err(|e| {
             error!("Failed to insert memory: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
         })?;
 
-        db.upsert_agentic_memory(memory).map_err(|e| {
+        db.upsert_agentic_memory(&organized_memory).map_err(|e| {
             error!("Failed to capture agentic metadata: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
         })?;

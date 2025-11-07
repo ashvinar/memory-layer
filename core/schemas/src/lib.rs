@@ -89,6 +89,7 @@ pub struct Memory {
     pub provenance: Vec<TurnId>,
     pub created_at: String, // RFC3339
     pub ttl: Option<u64>,
+    pub topic_id: Option<TopicId>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

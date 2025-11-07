@@ -70,6 +70,7 @@ impl MemoryExtractor {
                         provenance: vec![turn.id.clone()],
                         created_at: Utc::now().to_rfc3339(),
                         ttl: None,
+                        topic_id: None,
                     });
                 }
             }
@@ -96,6 +97,7 @@ impl MemoryExtractor {
                     provenance: vec![turn.id.clone()],
                     created_at: Utc::now().to_rfc3339(),
                     ttl: None,
+                    topic_id: None,
                 });
             }
         }
@@ -130,6 +132,7 @@ impl MemoryExtractor {
                         provenance: vec![turn.id.clone()],
                         created_at: Utc::now().to_rfc3339(),
                         ttl: Some(86400 * 7), // Tasks expire after 7 days by default
+                        topic_id: None,
                     });
                 }
             }
@@ -176,6 +179,7 @@ impl MemoryExtractor {
                         provenance: vec![turn.id.clone()],
                         created_at: Utc::now().to_rfc3339(),
                         ttl: None,
+                        topic_id: None,
                     });
                 }
             }
@@ -222,6 +226,7 @@ impl MemoryExtractor {
                 provenance: vec![turn.id.clone()],
                 created_at: Utc::now().to_rfc3339(),
                 ttl: None,
+                topic_id: None,
             });
         }
 
