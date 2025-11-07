@@ -7,20 +7,20 @@ use axum::{
     Router,
 };
 use memory_layer_ingestion::{
-    ActivityDay, Database, EntityStats, ImportanceStats, IndexNote, LifecycleStats,
-    MemoryExtractor, ProjectSummary, TopicSummary, TrendingTopic,
+    ActivityDay, Database, EntityStats, ImportanceStats, IndexNote, IngestionWorker,
+    LifecycleStats, MemoryExtractor, ProjectSummary, TopicSummary, TrendingTopic,
 };
 use memory_layer_schemas::{MemoryId, ProjectId, TopicId, Turn, WorkspaceId};
 use serde::Deserialize;
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::sync::{mpsc, Mutex};
 use tracing::{error, info, Level};
 use tracing_subscriber;
 
 #[derive(Clone)]
 struct AppState {
     db: Arc<Mutex<Database>>,
-    extractor: Arc<MemoryExtractor>,
+    turn_sender: mpsc::UnboundedSender<Turn>,
 }
 
 #[tokio::main]
@@ -46,9 +46,22 @@ async fn main() -> Result<()> {
 
     let extractor = MemoryExtractor::new();
 
+    // Create channel for async processing
+    let (turn_sender, turn_receiver) = mpsc::unbounded_channel::<Turn>();
+
+    let db_arc = Arc::new(Mutex::new(db));
+    let extractor_arc = Arc::new(extractor);
+
+    // Spawn the background worker
+    let worker = IngestionWorker::new(db_arc.clone(), extractor_arc.clone(), turn_receiver);
+    tokio::spawn(async move {
+        worker.run().await;
+    });
+    info!("Background ingestion worker spawned");
+
     let state = AppState {
-        db: Arc::new(Mutex::new(db)),
-        extractor: Arc::new(extractor),
+        db: db_arc,
+        turn_sender,
     };
 
     // Build router
@@ -124,43 +137,20 @@ async fn ingest_turn(
     State(state): State<AppState>,
     Json(turn): Json<Turn>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    info!("Ingesting turn: {}", turn.id);
+    let turn_id = turn.id.clone();
+    info!("Ingesting turn: {}", turn_id);
 
-    // Extract memories from the turn
-    let memories = state.extractor.extract(&turn).map_err(|e| {
-        error!("Failed to extract memories: {}", e);
-        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+    // Queue turn for async processing (no DB lock, instant return)
+    state.turn_sender.send(turn).map_err(|e| {
+        error!("Failed to queue turn for processing: {}", e);
+        (StatusCode::INTERNAL_SERVER_ERROR, "Failed to queue turn".to_string())
     })?;
 
-    info!(
-        "Extracted {} memories from turn {}",
-        memories.len(),
-        turn.id
-    );
-
-    // Store turn and memories
-    let db = state.db.lock().await;
-
-    db.insert_turn(&turn).map_err(|e| {
-        error!("Failed to insert turn: {}", e);
-        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-    })?;
-
-    for memory in &memories {
-        db.insert_memory(memory).map_err(|e| {
-            error!("Failed to insert memory: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-        })?;
-
-        db.upsert_agentic_memory(memory).map_err(|e| {
-            error!("Failed to capture agentic metadata: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-        })?;
-    }
+    info!("Turn {} queued for processing", turn_id);
 
     Ok(Json(serde_json::json!({
-        "turn_id": turn.id.0,
-        "memories_extracted": memories.len()
+        "turn_id": turn_id.0,
+        "status": "queued"
     })))
 }
 
