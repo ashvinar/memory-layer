@@ -5,6 +5,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var providerClient: ProviderClient?
     var accessibilityWatcher: AccessibilityWatcher?
     var memoryConsoleController: MemoryConsoleWindowController?
+    var hotkeyManager: HotkeyManager?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         print("Memory Layer starting...")
@@ -15,6 +16,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Initialize accessibility watcher
         accessibilityWatcher = AccessibilityWatcher(providerClient: providerClient!)
         accessibilityWatcher?.start()
+
+        // Initialize hotkey manager
+        hotkeyManager = HotkeyManager(accessibilityWatcher: accessibilityWatcher!)
+        hotkeyManager?.register()
 
         // Initialize status bar item
         statusItemController = StatusItemController(providerClient: providerClient!, accessibilityWatcher: accessibilityWatcher!)
@@ -27,6 +32,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         print("Memory Layer ready")
         print("Provider endpoint: http://127.0.0.1:21955/v1/context")
         print("Keyboard shortcut: ⌘⌥K to open search")
+        print("Keyboard shortcut: ⌘⇧M to add frontmost app to monitoring")
         print("Look for the brain icon in your menu bar (top-right of screen)")
 
         // Ensure the app stays in the foreground briefly so icon appears

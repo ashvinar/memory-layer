@@ -57,8 +57,8 @@ class AccessibilityWatcher: NSObject {
         print("AccessibilityWatcher started")
         isRunning = true
 
-        // Poll every 3 seconds for text changes
-        timer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
+        // Poll every 1 second for text changes
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.captureText()
         }
 

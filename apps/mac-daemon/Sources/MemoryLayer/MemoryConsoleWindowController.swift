@@ -439,7 +439,11 @@ final class MemoryConsoleWindowController: NSWindowController, NSWindowDelegate,
                 let items = try await memoryClient.fetchRecentMemories(limit: 200)
                 await MainActor.run {
                     self.memories = items
-                    self.fadeTransition(to: "Loaded \(items.count) memories", label: self.memoryStatusLabel)
+                    if items.isEmpty {
+                        self.fadeTransition(to: "No memories yet. Start using monitored apps to capture data.", label: self.memoryStatusLabel)
+                    } else {
+                        self.fadeTransition(to: "Loaded \(items.count) memories", label: self.memoryStatusLabel)
+                    }
 
                     NSAnimationContext.runAnimationGroup { context in
                         context.duration = 0.3
@@ -448,10 +452,25 @@ final class MemoryConsoleWindowController: NSWindowController, NSWindowDelegate,
                 }
             } catch let error as ProviderError {
                 await MainActor.run {
-                    self.applySampleMemories(reason: error)
+                    self.memories = []
+                    self.memoriesTable.reloadData()
+                    let message: String
+                    switch error {
+                    case .serviceUnavailable:
+                        message = "Memory service offline. Please ensure services are running."
+                    case .decodingError(let decodingError):
+                        message = "Failed to parse response: \(decodingError.localizedDescription)"
+                    case .networkError(let networkError):
+                        message = "Network error: \(networkError.localizedDescription)"
+                    case .invalidResponse:
+                        message = "Invalid response from service."
+                    }
+                    self.fadeTransition(to: message, label: self.memoryStatusLabel)
                 }
             } catch {
                 await MainActor.run {
+                    self.memories = []
+                    self.memoriesTable.reloadData()
                     self.fadeTransition(to: "Failed to load memories: \(error.localizedDescription)", label: self.memoryStatusLabel)
                 }
             }
@@ -466,7 +485,11 @@ final class MemoryConsoleWindowController: NSWindowController, NSWindowDelegate,
                 let items = try await memoryClient.fetchTopicSummaries(limit: 100)
                 await MainActor.run {
                     self.topics = items
-                    self.fadeTransition(to: "Mapped \(items.count) topics", label: self.topicsStatusLabel)
+                    if items.isEmpty {
+                        self.fadeTransition(to: "No topics yet. Memories will be organized as they are captured.", label: self.topicsStatusLabel)
+                    } else {
+                        self.fadeTransition(to: "Mapped \(items.count) topics", label: self.topicsStatusLabel)
+                    }
 
                     NSAnimationContext.runAnimationGroup { context in
                         context.duration = 0.3
@@ -475,10 +498,25 @@ final class MemoryConsoleWindowController: NSWindowController, NSWindowDelegate,
                 }
             } catch let error as ProviderError {
                 await MainActor.run {
-                    self.applySampleTopics(reason: error)
+                    self.topics = []
+                    self.topicsTable.reloadData()
+                    let message: String
+                    switch error {
+                    case .serviceUnavailable:
+                        message = "Memory service offline. Please ensure services are running."
+                    case .decodingError(let decodingError):
+                        message = "Failed to parse response: \(decodingError.localizedDescription)"
+                    case .networkError(let networkError):
+                        message = "Network error: \(networkError.localizedDescription)"
+                    case .invalidResponse:
+                        message = "Invalid response from service."
+                    }
+                    self.fadeTransition(to: message, label: self.topicsStatusLabel)
                 }
             } catch {
                 await MainActor.run {
+                    self.topics = []
+                    self.topicsTable.reloadData()
                     self.fadeTransition(to: "Failed to load topics: \(error.localizedDescription)", label: self.topicsStatusLabel)
                 }
             }
@@ -598,43 +636,37 @@ final class MemoryConsoleWindowController: NSWindowController, NSWindowDelegate,
                 await MainActor.run {
                     self.graphView.render(graph: graphData)
                     self.hasRenderedGraph = true
-                    self.graphStatusLabel.stringValue = "Graph: \(graphData.nodes.count) nodes · \(graphData.edges.count) edges"
+                    if graphData.nodes.isEmpty {
+                        self.graphStatusLabel.stringValue = "No graph data yet. Memories will appear here as they build connections."
+                    } else {
+                        self.graphStatusLabel.stringValue = "Graph: \(graphData.nodes.count) nodes · \(graphData.edges.count) edges"
+                    }
                     self.isGraphRefreshing = false
                 }
             } catch let error as ProviderError {
                 await MainActor.run {
-                    if !self.hasRenderedGraph {
-                        self.graphView.render(graph: MemoryConsoleSampleData.graph)
-                        self.graphStatusLabel.stringValue = self.graphUnavailableMessage(for: error)
-                        self.hasRenderedGraph = true
-                    } else {
-                        self.graphStatusLabel.stringValue = "Graph update failed: \(error.localizedDescription)"
+                    let message: String
+                    switch error {
+                    case .serviceUnavailable:
+                        message = "Indexing service offline. Please ensure indexing service is running on port 21954."
+                    case .decodingError(let decodingError):
+                        message = "Failed to parse graph: \(decodingError.localizedDescription)"
+                    case .networkError(let networkError):
+                        message = "Network error: \(networkError.localizedDescription)"
+                    case .invalidResponse:
+                        message = "Invalid response from indexing service."
                     }
+                    self.graphStatusLabel.stringValue = message
+                    self.hasRenderedGraph = true
                     self.isGraphRefreshing = false
                 }
             } catch {
                 await MainActor.run {
-                    if !self.hasRenderedGraph {
-                        self.graphView.render(graph: MemoryConsoleSampleData.graph)
-                        self.graphStatusLabel.stringValue = "Graph unavailable: \(error.localizedDescription). Showing sample graph."
-                        self.hasRenderedGraph = true
-                    } else {
-                        self.graphStatusLabel.stringValue = "Graph update failed: \(error.localizedDescription)"
-                    }
+                    self.graphStatusLabel.stringValue = "Graph unavailable: \(error.localizedDescription)"
+                    self.hasRenderedGraph = true
                     self.isGraphRefreshing = false
                 }
             }
-        }
-    }
-
-    private func graphUnavailableMessage(for error: ProviderError) -> String {
-        switch error {
-        case .serviceUnavailable:
-            return "Indexing service offline (showing sample graph)."
-        case .decodingError:
-            return "Graph parse failed (showing sample graph)."
-        default:
-            return "Graph unavailable: \(error.localizedDescription). Showing sample graph."
         }
     }
 
@@ -833,18 +865,6 @@ final class MemoryConsoleWindowController: NSWindowController, NSWindowDelegate,
         ])
 
         return cell
-    }
-
-    private func applySampleMemories(reason: ProviderError) {
-        memories = MemoryConsoleSampleData.memories
-        memoryStatusLabel.stringValue = "Services offline (\(reason.localizedDescription)). Showing sample memories."
-        memoriesTable.reloadData()
-    }
-
-    private func applySampleTopics(reason: ProviderError) {
-        topics = MemoryConsoleSampleData.topics
-        topicsStatusLabel.stringValue = "Services offline (\(reason.localizedDescription)). Showing sample topics."
-        topicsTable.reloadData()
     }
 
     // MARK: - NSTabViewDelegate
